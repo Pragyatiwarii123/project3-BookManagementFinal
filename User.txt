@@ -1,0 +1,34 @@
+Create User: 
+
+
+1. {
+    "title": "Mr",
+    "name": "Chetan Bhagat",
+    "phone": 6234567890,
+    "email": "chetan@mailinator.com", 
+    "password": "Chetan@1234567",
+    "address": {
+        "street": "110, Ridhi Sidhi Tower",
+        "city": "Jaipur",
+        "pincode": "400001"
+    }
+}
+
+2. {
+    "title": "Mr",
+    "name": "J.K Rowling",
+    "phone": "9676543456",
+    "email": "rowling@mailinator.com",
+    "password": "Rowling@1234567",
+    "address": {
+    "street": "Morningside Road",
+    "city": "Scotland",
+    "pincode": "932325"
+  }
+}
+
+
+3.
+
+"email": "rntagore@mailinator.com",
+"password": "Rntagore@123456"
