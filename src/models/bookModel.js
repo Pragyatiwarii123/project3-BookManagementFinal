@@ -56,6 +56,11 @@ const BooksSchema = new mongoose.Schema({
         default: false
     },
 
+    bookCover: {
+        type: String,
+        required: true
+    },
+
     releasedAt: {
         type: String,
         required: true,

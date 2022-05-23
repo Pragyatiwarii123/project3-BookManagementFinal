@@ -3,7 +3,7 @@ const router = express.Router();
 
 
 const { createUser, userLogin } = require('../controllers/userController');
-const { createBook, getFilteredBooks, getBookById, updateBook, deleteBook, createImage  } = require('../controllers/bookController');
+const { createBook, getFilteredBooks, getBookById, updateBook, deleteBook  } = require('../controllers/bookController');
 const { addReview, updateReview, deleteReview } = require('../controllers/reviewController');
 const { authentication, authorization } = require('../middleware/auth');
 
@@ -25,8 +25,6 @@ router.post('/books/:bookId/review', addReview);
 router.put('/books/:bookId/review/:reviewId', updateReview);
 router.delete('/books/:bookId/review/:reviewId', deleteReview);
 
-
-router.post("/write-file-aws", createImage)
 
 
 module.exports = router

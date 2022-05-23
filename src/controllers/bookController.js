@@ -1,5 +1,5 @@
 
-const aws= require("aws-sdk")
+const aws = require("aws-sdk")
 
 const Book = require('../models/bookModel');
 const User = require('../models/userModel');
@@ -33,76 +33,56 @@ aws.config.update({
   region: "ap-south-1"
 })
 
-let uploadFile= async ( file) =>{
- return new Promise( function(resolve, reject) {
-  // this function will upload file to aws and return the link
-  let s3= new aws.S3({apiVersion: '2006-03-01'}); // we will be using the s3 service of aws
+let uploadFile = async function (file) {
+  return new Promise(function (resolve, reject) {
+    // this function will upload file to aws and return the link
+    let s3 = new aws.S3({ apiVersion: '2006-03-01' }); // we will be using the s3 service of aws
 
-  var uploadParams= {
+    var uploadParams = {
       ACL: "public-read",
       Bucket: "classroom-training-bucket",  //HERE
       Key: "abc/" + file.originalname, //HERE 
       Body: file.buffer
-  }
+    }
 
 
-  s3.upload( uploadParams, function (err, data ){
-      if(err) {
-          return reject({"error": err})
+    s3.upload(uploadParams, function (err, data) {
+      if (err) {
+        return reject({ "error": err })
       }
       console.log(data)
       console.log("file uploaded succesfully")
       return resolve(data.Location)
+    })
+
+    // let data= await s3.upload( uploadParams)
+    // if( data) return data.Location
+    // else return "there is an error"
+
   })
-
-  // let data= await s3.upload( uploadParams)
-  // if( data) return data.Location
-  // else return "there is an error"
-
- })
-}
-
-let createImage = async function(req, res){
-
-  try{
-      let files= req.files
-      if(files && files.length>0){
-          //upload to s3 and get the uploaded link
-          // res.send the link back to frontend/postman
-          let uploadedFileURL= await uploadFile( files[0] )
-          res.status(201).send({msg: "file uploaded succesfully", data: uploadedFileURL})
-      }
-      else{
-          res.status(400).send({ msg: "No file found" })
-      }
-      
-  }
-  catch(err){
-      res.status(500).send({msg: err})
-  }
-  
 }
 
 
-
-
-
-
-       // POST /books
+// POST /books
 
 const createBook = async function (req, res) {
   try {
     let data = req.body;
-console.log(req.body, req.files);
+    let files = req.files
+    if (!(files && files.length > 0)) return res.status(400).send({ msg: "No file found" })
+    let uploadedFileURL = await uploadFile(files[0])
+    data.bookCover = uploadedFileURL
+    console.log(data)
+
     // Validate the Body
 
     if (isValidBody(data)) {
       return res.status(400).send({ status: false, message: "Enter Book details" });
     }
 
-    if(data.hasOwnProperty('reviews')) {
-      return res.status(400).send({ status: false, message: "Cannot edit review" });
-    }
+    // if (data.hasOwnProperty('reviews')) {
+    //   return res.status(400).send({ status: false, message: "Cannot edit review" });
+    // }
 
     //check the title
     if (!data.title) {
@@ -151,12 +131,12 @@ console.log(req.body, req.files);
     }
 
     // validate the releasedAt
-    if(validDate(data.releasedAt)) {
+    if (validDate(data.releasedAt)) {
       return res.status(400).send({ status: false, message: "Enter a valid released date in (YYYY-MM-DD) formate" })
     }
 
     // validate the ISBN
-    if(validISBN(data.ISBN)) {
+    if (validISBN(data.ISBN)) {
       return res.status(400).send({ status: false, message: "Enter a valid ISBN number" })
     }
 
@@ -173,7 +153,7 @@ console.log(req.body, req.files);
   }
 };
 
-    // GET /books
+// GET /books
 
 const getFilteredBooks = async (req, res) => {
   try {
@@ -191,7 +171,7 @@ const getFilteredBooks = async (req, res) => {
       if (!isValidObjectId(data.userId)) return res.status(400).send({ status: false, message: "Enter a valid user id" });
       let { ...tempData } = data;
       delete (tempData.userId);
-      let checkValues = Object.values(tempData); 
+      let checkValues = Object.values(tempData);
 
       if (validString(checkValues)) return res.status(400).send({ status: false, message: "Filter data should not contain numbers excluding user id" })
     } else {
@@ -213,7 +193,7 @@ const getFilteredBooks = async (req, res) => {
 
 
 
-    // GET /books/:bookId
+// GET /books/:bookId
 const getBookById = async (req, res) => {
   try {
     let bookId = req.params.bookId;
@@ -225,7 +205,7 @@ const getBookById = async (req, res) => {
     let getBook = await Book.findById(bookId).select({ __v: 0 }).lean()
     if (!getBook) return res.status(404).send({ status: false, message: "No book found" })
 
-    if(getBook.isDeleted == true) return res.status(404).send({ status: false, message: "Book not found or have already been deleted" })
+    if (getBook.isDeleted == true) return res.status(404).send({ status: false, message: "Book not found or have already been deleted" })
 
     let getReviews = await Review.find({ bookId: getBook._id, isDeleted: false }).select({ isDeleted: 0, __v: 0, createdAt: 0, updatedAt: 0 });
 
@@ -237,54 +217,54 @@ const getBookById = async (req, res) => {
   }
 }
 
- // PUT /books/:bookId
+// PUT /books/:bookId
 const updateBook = async (req, res) => {
   try {
     let bookId = req.params.bookId
 
     let checkBookId = await Book.findById(bookId);
-    if(!checkBookId) return res.status(404).send({ status: false, message: "Book not found" });
+    if (!checkBookId) return res.status(404).send({ status: false, message: "Book not found" });
 
-    if(checkBookId.isDeleted == true) return res.status(404).send({ status: false, message: "Book not found or might have been deleted" });
+    if (checkBookId.isDeleted == true) return res.status(404).send({ status: false, message: "Book not found or might have been deleted" });
 
     let data = req.body;
 
     // validate the body
-    if(isValidBody(data)) return res.status(400).send({ status: false, message: "Data is required to update document" });
+    if (isValidBody(data)) return res.status(400).send({ status: false, message: "Data is required to update document" });
 
     // check releasedAt
     if (!data.releasedAt) {
       return res.status(400).send({ status: false, message: "ReleasedAt date is required" })
     }
 
-    if(data.hasOwnProperty('userId') || data.hasOwnProperty('reviews') || data.hasOwnProperty('isDeleted') || data.hasOwnProperty('deletedAt')) return res.status(400).send({ status: false, message: 'Action is Forbidden' });
+    if (data.hasOwnProperty('userId') || data.hasOwnProperty('reviews') || data.hasOwnProperty('isDeleted') || data.hasOwnProperty('deletedAt')) return res.status(400).send({ status: false, message: 'Action is Forbidden' });
 
-    if(data.hasOwnProperty('title')) {
+    if (data.hasOwnProperty('title')) {
       let checkUniqueValue = await Book.findOne({ title: data.title })
 
       if (checkUniqueValue) return res.status(400).send({ status: false, message: "Title already exist" })
     }
-    if(data.hasOwnProperty('ISBN')) {
-      if(validISBN(data.ISBN)) {
+    if (data.hasOwnProperty('ISBN')) {
+      if (validISBN(data.ISBN)) {
         return res.status(400).send({ status: false, message: "Enter a valid ISBN number" })
       }
-      let checkUniqueValue = await Book.findOne({ ISBN: data.ISBN  })
+      let checkUniqueValue = await Book.findOne({ ISBN: data.ISBN })
 
       if (checkUniqueValue) return res.status(400).send({ status: false, message: "ISBN already exist" })
     }
-  
+
     if (validString(data.excerpt) || validString(data.category) || validString(data.subcategory)) {
       return res.status(400).send({ status: false, message: "Data should not contain Numbers" })
     }
-    
-    if(validDate(data.releasedAt)) {
+
+    if (validDate(data.releasedAt)) {
       return res.status(400).send({ status: false, message: "Enter a valid released date in (YYYY-MM-DD) formate" })
     }
 
     let updatedBookData = await Book.findByIdAndUpdate(
-      {_id: bookId },
+      { _id: bookId },
       data,
-      {new: true}
+      { new: true }
     )
     res.send({ status: true, message: "Success", data: updatedBookData })
 
@@ -296,25 +276,25 @@ const updateBook = async (req, res) => {
 // DELETE /books/:bookId
 const deleteBook = async function (req, res) {
   try {
-      const bookId = req.params.bookId;
-      const book = await Book.findById(bookId);
+    const bookId = req.params.bookId;
+    const book = await Book.findById(bookId);
 
-      // check Book
-      if (!book) {
-          return res.status(404).send({status: false,message:"No such book exists"});
-      }
-      if (book.isDeleted == true) {
-          return res.status(404).send({ status: false, message: "Book not found or has already been deleted" })
-      }
-      
-    await Book.updateOne({ _id: bookId }, { isDeleted: true ,deletedAt: Date.now(), reviews: 0} );
-    await Review.updateMany({bookId: bookId}, { isDeleted: true })
-    res.status(200).send({status: true, message: "Book deleted successfully"});
+    // check Book
+    if (!book) {
+      return res.status(404).send({ status: false, message: "No such book exists" });
+    }
+    if (book.isDeleted == true) {
+      return res.status(404).send({ status: false, message: "Book not found or has already been deleted" })
+    }
+
+    await Book.updateOne({ _id: bookId }, { isDeleted: true, deletedAt: Date.now(), reviews: 0 });
+    await Review.updateMany({ bookId: bookId }, { isDeleted: true })
+    res.status(200).send({ status: true, message: "Book deleted successfully" });
   }
   catch (err) {
-      res.status(500).send({status: false, error: err.message })
+    res.status(500).send({ status: false, error: err.message })
   }
 }
 
 
-module.exports = { getFilteredBooks, getBookById, createBook, updateBook, deleteBook, createImage };
+module.exports = { getFilteredBooks, getBookById, createBook, updateBook, deleteBook};
